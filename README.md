@@ -7,7 +7,7 @@ Ce projet vise à analyser des tweets liés à l’élection présidentielle am�
 
 Cette version du projet constitue la **fondation cdu projet** avec une base de donnée propre.
 
-*   ✅ **Base de Données :** La base de donnée de Kaggle nous a permis de collecter les données nécessaire au bon fonctionnement du projet (https://www.kaggle.com/datasets/manchunhui/us-election-2020-tweets)
+*   **Base de Données :** La base de donnée de Kaggle nous a permis de collecter les données nécessaire au bon fonctionnement du projet (https://www.kaggle.com/datasets/manchunhui/us-election-2020-tweets)
 
 ## Fonctionnalités Implémentées
 
