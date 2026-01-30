@@ -130,7 +130,7 @@ This UML diagram summarizes the logical architecture of the project.
 The `utils_text` module provides low-level tweet cleaning functions (`fix_mojibake`, `clean_text`, retweet detection).  
 `SentimentAnalyzer` encapsulates the sentiment model and exposes methods to predict sentiment for a single tweet or a whole dataset.  
 `UserAnalyzer` groups functions for user‑level analysis (top accounts, per‑candidate stats, etc.).  
-`GeoAnalyzer` handles the geographic part: favorite candidate by region and map/barplot creation.  
+`GeoAnalyzer`is responsible for the aggregation and spatial analysis of tweets. It relies on the DataFrames produced in the previous stages (cleaning and sentiment analysis) and focuses exclusively on the geographical dimension of the data.
 Finally, notebooks 01–05 orchestrate the whole pipeline: they call functions from these modules, produce visualizations, and serve as support for exploratory analysis and presentation.
 
 The link between sentiment and geography is as follows:
@@ -341,29 +341,104 @@ print(df[["text", "clean_text"]].head())
 ## 2. Geographic Analysis
 
 **Summary**
+This feature focuses on the geographical distribution of tweets related to the 2020 US presidential election.
+Using the location metadata available in the dataset (country, state, and when available latitude/longitude), we analyze how Twitter activity related to Joe Biden and Donald Trump is spatially distributed.
 
-- Number of tweets per candidate, day, and language  
-- Most frequent hashtags and mentions  
-- Distributions (tweet length, retweets, likes)
+The objective is twofold:
+
+identify the regions where each candidate generates the most engagement,
+
+compare geographic patterns between Biden and Trump.
+
+This analysis provides a complementary perspective to sentiment and user-based analyses, highlighting territorial differences in online political engagement.
+
+**Methodology**
+
+The analysis is performed in several steps:
+
+Data selection
+Only tweets with valid geographic information are retained (non-null country or state).
+
+Aggregation by region
+Tweets are grouped by geographic unit (US states and countries) and by candidate.
+
+Comparison between candidates
+Aggregated counts are combined into a single table to allow direct comparison between Biden and Trump for each region.
+
+Visualization
+The results are visualized using bar plots (top regions) and can be extended to geographic maps when latitude and longitude are available.
+
+**Associated module**
+
+src/geography_analysis.py
+This module defines the GeoAnalyzer class, which encapsulates all geographic aggregation logic.
+
+Main methods include:
+
+tweets_per_state(top_n=10) – counts tweets per US state
+
+tweets_per_country() – counts tweets per country
+
+compare_candidates_by_state(biden_df, trump_df) – builds a comparative table
+
+build_geo_map(geojson_file, comparison_df) – creates an interactive map.
 
 **Associated notebook**
 
-- `notebooks/02_eda.ipynb` (and specific geographic notebook if needed)
+- notebooks/05_geographic.ipynb
 
-**Example**
+This notebook orchestrates the analysis:
+
+loading the cleaned datasets,
+
+calling the methods of GeoAnalyzer,
+
+generating the final tables and visualizations.
+
+**Example usage**
 
 ```python
 import pandas as pd
+from src.geography_analysis import GeographyAnalyzer
 
-df = pd.read_csv("data/processed/all_tweets_clean.csv")
-print("Tweets per candidate:")
-print(df["candidate"].value_counts())
+# Load reduced CSVs
+biden = pd.read_csv("data/biden_small.csv.gz", compression="gzip")
+trump = pd.read_csv("data/trump_small.csv.gz", compression="gzip")
 
-print("\nTop 10 hashtags:")
-print(df["hashtags"].explode().value_counts().head(10))
+# Initialize analyzers
+geo_biden = GeographyAnalyzer(biden, candidate="Biden")
+geo_trump = GeographyAnalyzer(trump, candidate="Trump")
+
+# Compute top states
+top_states_biden = geo_biden.tweets_per_state(top_n=10)
+top_states_trump = geo_trump.tweets_per_state(top_n=10)
+
+# Compare candidates
+comparison_df = GeographyAnalyzer.compare_candidates_by_state(biden, trump)
+
+# Build interactive map
+geojson_file = "data/geo/us_states.json"
+map_biden_vs_trump = GeographyAnalyzer.build_geo_map(geojson_file, comparison_df)
+map_biden_vs_trump.save("outputs/figures/us_states_biden_vs_trump_map.html")
 ```
 
-> (Bonus) Add a screenshot of a barplot of the most frequent hashtags or a geographic barplot/map.
+**Visualisation**
+
+L’illustration ci-dessous présente un exemple de comparaison des 10 États américains générant le plus de tweets pour chacun des deux candidats.
+
+📊 Figure : Top 10 des États américains – comparaison du volume de tweets entre Joe Biden et Donald Trump.
+
+(Insérer ici l’image : outputs/figures/top_states_comparison.png)
+
+Ce graphique met en évidence des différences géographiques marquées dans l’activité Twitter associée aux deux candidats et permet d’identifier les régions où les discussions politiques ont été particulièrement intenses durant la campagne électorale.
+
+**Notes**
+
+Adding the interactive map does not change the underlying data
+
+All barplots, counts, and statistical analyses remain exactly the same
+
+The map is purely a visualization layer
 
 ---
 
