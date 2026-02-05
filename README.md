@@ -123,14 +123,39 @@ Raw CSV → Cleaning & enrichment → Analysis modules (sentiment, comparison, u
            |                                               | 05_Geographic.ipynb     |
            |                                               |                         |
            +---------------------------------------------->+-------------------------+
-```
+### UML – Geographic Analysis Module
+
+My contribution to the project focuses on the geographic analysis of tweets
+and the visualization of candidate dominance across countries.
+
+This part of the pipeline is implemented using an object-oriented approach,
+mainly through the `GeographyAnalyzer` class and a dedicated map builder
+(`WorldMapBuilder`).
+
+The role of `GeographyAnalyzer` is to process already cleaned tweet data
+and aggregate it by geographic location. It identifies the location column,
+normalizes user-provided locations, and computes tweet counts for each
+candidate per region. It also derives comparison metrics such as the
+absolute difference and relative dominance between Biden and Trump.
+
+Once the geographic aggregation is completed, the resulting DataFrame
+is passed to the visualization layer. The `WorldMapBuilder` class is
+responsible for transforming these aggregated values into an interactive
+choropleth map using Folium. This class encapsulates all map-related logic,
+including color scaling, legend generation, and country styling.
+
+This separation of concerns ensures that data processing and visualization
+remain independent, reusable, and easy to maintain. The geographic module
+can therefore be reused with different datasets or extended to finer
+geographic levels (e.g. cities or states) without modifying the core logic
+of the pipeline.
 
 This UML diagram summarizes the logical architecture of the project.  
 `DataLoader` loads raw and cleaned data as pandas DataFrames.  
 The `utils_text` module provides low-level tweet cleaning functions (`fix_mojibake`, `clean_text`, retweet detection).  
 `SentimentAnalyzer` encapsulates the sentiment model and exposes methods to predict sentiment for a single tweet or a whole dataset.  
 `UserAnalyzer` groups functions for user‑level analysis (top accounts, per‑candidate stats, etc.).  
-`GeoAnalyzer` handles the geographic part: favorite candidate by region and map/barplot creation.  
+`GeoAnalyzer` handles the geographic logic: favorite candidate by region and map/barplot creation.  
 Finally, notebooks 01–05 orchestrate the whole pipeline: they call functions from these modules, produce visualizations, and serve as support for exploratory analysis and presentation.
 
 The link between sentiment and geography is as follows:
@@ -539,7 +564,7 @@ Then open notebooks (for example `notebooks/03_sentiment.ipynb`) to generate fig
 
 - Marie – <your feature>  
 - Danielle Keune – data cleaning  
-- Sandrine Bodjio – <your feature>  
+- Sandrine Bodio – Geographic analysis, object-oriented refactoring, and interactive mapping 
 - Tonye Kaptue – <your feature>  
 - Silvio – <your feature>  
 
