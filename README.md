@@ -130,7 +130,10 @@ This UML diagram summarizes the logical architecture of the project.
 The `utils_text` module provides low-level tweet cleaning functions (`fix_mojibake`, `clean_text`, retweet detection).  
 `SentimentAnalyzer` encapsulates the sentiment model and exposes methods to predict sentiment for a single tweet or a whole dataset.  
 `UserAnalyzer` groups functions for user‑level analysis (top accounts, per‑candidate stats, etc.).  
-`GeoAnalyzer` handles the geographic part: favorite candidate by region and map/barplot creation.  
+In this project, the geographic analysis is encapsulated in a dedicated
+`GeographyAnalyzer` class. This class is responsible for aggregating tweet
+locations, comparing candidates geographically, and producing structured
+data that can be reused by visualization components such as maps or barplots.  
 Finally, notebooks 01–05 orchestrate the whole pipeline: they call functions from these modules, produce visualizations, and serve as support for exploratory analysis and presentation.
 
 The link between sentiment and geography is as follows:
@@ -342,28 +345,130 @@ print(df[["text", "clean_text"]].head())
 
 **Summary**
 
-- Number of tweets per candidate, day, and language  
-- Most frequent hashtags and mentions  
-- Distributions (tweet length, retweets, likes)
+The geographic analysis aims to study where tweets mentioning each candidate are produced, and to compare the relative presence of Joe Biden and Donald Trump across different geographic areas.
+
+This analysis does not claim to represent actual voting behavior. Instead, it focuses on Twitter activity, which reflects online engagement, discussion intensity, and political visibility by region.
+
+The geographic component was fully redesigned using object-oriented programming, in order to separate:
+
+- data loading and aggregation,
+
+- geographic normalization,
+
+- and visualization (charts and maps).
+
+  **Methodology**
+
+The analysis follows these steps:
+
+- Location extraction
+Tweets contain a free-text user_location field provided by users.
+This field is noisy and heterogeneous (cities, countries, emojis, abbreviations).
+
+- Location cleaning and normalization
+Locations are lowercased, cleaned from special characters, and normalized.
+A rule-based approach is used to map frequent cities to their corresponding countries
+(e.g. “paris” → France, “london” → United Kingdom).
+
+- Aggregation by geographic unit
+Tweets are aggregated by geographic area (country level for the global map),
+and the number of tweets mentioning each candidate is counted.
+
+- Candidate comparison
+For each geographic area, we compute:
+
+* number of Biden tweets,
+
+* number of Trump tweets,
+
+* total volume,
+
+* and a relative dominance score.
+
+**Object-Oriented Design**
+
+The geographic logic is encapsulated in the GeographyAnalyzer class
+(src/geography_analysis.py).
+
+This class is responsible for:
+
+- loading tweet datasets,
+
+- detecting the location column automatically,
+
+- cleaning and normalizing locations,
+
+- aggregating tweets by geographic area,
+
+- comparing Biden and Trump tweet volumes.
+
+The use of a dedicated class allows:
+
+- clearer separation of concerns,
+
+-  reusable geographic logic,
+
+- and lighter notebooks focused only on exploration and visualization.
+
+Visualization is handled separately through a WorldMapBuilder class, which transforms aggregated data into an interactive map without mixing analysis logic and rendering code.
 
 **Associated notebook**
 
-- `notebooks/02_eda.ipynb` (and specific geographic notebook if needed)
+- notebooks/geography_exploration.ipynb
 
-**Example**
+This notebook orchestrates the analysis by:
 
-```python
-import pandas as pd
+- instantiating the GeographyAnalyzer,
 
-df = pd.read_csv("data/processed/all_tweets_clean.csv")
-print("Tweets per candidate:")
-print(df["candidate"].value_counts())
+- computing geographic aggregates,
 
-print("\nTop 10 hashtags:")
-print(df["hashtags"].explode().value_counts().head(10))
-```
+- generating charts and interactive maps.
 
-> (Bonus) Add a screenshot of a barplot of the most frequent hashtags or a geographic barplot/map.
+**Visualizations**
+Top geographic locations by tweet volume
+
+The following bar chart shows the most active geographic locations worldwide
+in terms of tweet volume for each candidate.
+
+This visualization highlights regions where online political discussion
+was particularly intense.
+
+**Balanced geographic comparison**
+
+To better compare both candidates, we also visualize locations where
+one candidate dominates the other in terms of tweet volume.
+
+Blue bars correspond to locations where Biden is more mentioned,
+while red bars correspond to Trump-dominant locations.
+
+**Global dominance map**
+
+The main visualization of this feature is an interactive world map.
+
+Each country is colored according to the relative dominance score:
+
+- Blue shades → Biden-dominant regions
+
+- Red shades → Trump-dominant regions
+
+- Color intensity reflects the magnitude of dominance
+
+Hovering over a country displays the number of tweets for each candidate,
+allowing a more detailed interpretation.
+
+**Interpretation and Limitations**
+
+This analysis reflects Twitter activity, not actual electoral results.
+Several biases must be considered:
+
+- Twitter users are not representative of the general population,
+
+- some countries show strong activity despite not being involved in the US election,
+
+- location data is self-reported and sometimes ambiguous.
+
+Nevertheless, the geographic analysis provides useful insight into
+where political discourse was most active online during the 2020 US election.
 
 ---
 
@@ -539,7 +644,7 @@ Then open notebooks (for example `notebooks/03_sentiment.ipynb`) to generate fig
 
 - Marie – <your feature>  
 - Danielle Keune – data cleaning  
-- Sandrine Bodjio – <your feature>  
+- Sandrine Bodio – <your feat, ure>  
 - Tonye Kaptue – <your feature>  
 - Silvio – <your feature>  
 
